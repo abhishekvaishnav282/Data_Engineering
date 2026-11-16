@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azure Networking and DevOps – Study Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f6f8fb; --sheet:#ffffff; --ink:#1b2433; --muted:#566275;
+  --line:#d9dfe8; --accent:#1f4e8c; --accent-soft:#e6eef8;
+  --private:#0f6b62; --private-soft:#e3f3f0; --public:#9a5b0b; --public-soft:#fbf0de;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11161e; --sheet:#171e29; --ink:#e4e9f1; --muted:#9aa6b8;
+    --line:#2c3646; --accent:#8db4ea; --accent-soft:#1d2b40;
+    --private:#6fd0c3; --private-soft:#15302d; --public:#e9b56b; --public-soft:#33281a;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:16px/1.65 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:48px 24px 80px}
+header.doc{border-bottom:2px solid var(--accent);padding-bottom:20px;margin-bottom:36px}
+header.doc h1{font:600 2.3rem/1.15 "IBM Plex Serif",Georgia,serif;margin:0 0 8px}
+header.doc p{margin:0;color:var(--muted)}
+nav.toc{background:var(--sheet);border:1px solid var(--line);border-radius:6px;padding:14px 20px;margin-bottom:40px}
+nav.toc strong{display:block;margin-bottom:6px}
+nav.toc ol{margin:0;padding-left:20px}
+nav.toc a{color:var(--accent);text-decoration:none}
+nav.toc a:hover,nav.toc a:focus-visible{text-decoration:underline}
+article.response{background:var(--sheet);border:1px solid var(--line);border-radius:8px;padding:36px 40px;margin-bottom:40px}
+.resp-tag{display:inline-block;font-size:.85rem;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:2px 10px;border-radius:4px;margin-bottom:10px}
+h2{font:600 1.9rem/1.2 "IBM Plex Serif",Georgia,serif;margin:0 0 14px}
+h3{font:600 1.3rem/1.3 "IBM Plex Serif",Georgia,serif;margin:40px 0 12px;padding-top:18px;border-top:1px solid var(--line)}
+h4{font-size:1.05rem;margin:0 0 6px}
+p{margin:0 0 14px;max-width:72ch}
+ul,ol{margin:0 0 14px;padding-left:22px}
+li{margin-bottom:4px}
+.lead{font-size:1.08rem}
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 6px 6px 0;margin:16px 0}
+.callout.warn{border-color:var(--public);background:var(--public-soft)}
+.callout p:last-child{margin:0}
+.analogy{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0}
+.analogy div{border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+.analogy b{display:block;color:var(--accent)}
+.components{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:14px}
+.comp{border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:6px;padding:14px 16px}
+.comp .num{font-weight:600;color:var(--accent);margin-right:6px}
+.comp p{font-size:.95rem;margin-bottom:8px}
+.comp .ex{font-size:.9rem;color:var(--muted);margin:0}
+figure{margin:20px 0}
+figure svg{width:100%;height:auto;display:block}
+figcaption{font-size:.88rem;color:var(--muted);font-style:italic;margin-top:8px}
+.d-box{fill:var(--sheet);stroke:var(--line);stroke-width:1.2}
+.d-vnet{fill:var(--private-soft);stroke:var(--private);stroke-width:1.2;stroke-dasharray:6 4}
+.d-sec{fill:var(--public-soft);stroke:var(--public);stroke-width:1}
+.d-t{fill:var(--ink);font:600 15px "IBM Plex Sans",sans-serif}
+.d-s{fill:var(--muted);font:13px "IBM Plex Sans",sans-serif}
+.d-v{fill:var(--private);font:600 13px "IBM Plex Sans",sans-serif}
+.d-arrow{stroke:var(--accent);stroke-width:1.6;fill:none}
+.table-wrap{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+th{background:var(--accent-soft)}
+th.pub{background:var(--public-soft);color:var(--public)}
+th.priv{background:var(--private-soft);color:var(--private)}
+.path{list-style:none;padding:0;counter-reset:step}
+.path li{counter-increment:step;position:relative;padding:10px 0 10px 46px;border-bottom:1px dashed var(--line)}
+.path li::before{content:counter(step);position:absolute;left:0;top:10px;width:30px;height:30px;border-radius:50%;
+  background:var(--accent);color:var(--sheet);font-weight:600;display:grid;place-items:center}
+.path li span{display:block;color:var(--muted);font-size:.93rem}
+.d-no{stroke:var(--public);stroke-width:1.6;stroke-dasharray:6 5;fill:none}
+.d-c{fill:var(--accent);font:600 14px "IBM Plex Sans",sans-serif}
+.intro-list{border:1px solid var(--line);border-radius:6px;padding:12px 16px 12px 36px;margin-bottom:18px}
+pre.tree{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:14px 18px;overflow-x:auto;
+  font:14px/1.55 ui-monospace,"SF Mono",Consolas,monospace;margin:14px 0}
+.formula{font-size:1.15rem;text-align:center;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:14px;margin:14px 0}
+tr.res td{background:var(--public-soft)}
+tr.use td{background:var(--private-soft)}
+td small{display:block;color:var(--muted)}
+.correction{border:1px solid var(--private);background:var(--private-soft);border-radius:6px;padding:12px 16px;margin:16px 0}
+.correction p{margin:0}
+.versus{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:12px 0}
+.versus div{border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.vflow{display:flex;flex-direction:column;align-items:flex-start;gap:0;margin:14px 0}
+.vflow span{border:1px solid var(--line);background:var(--paper);border-radius:6px;padding:7px 14px;font-weight:500}
+.vflow span.ci{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.vflow span.cd{border-color:var(--private);background:var(--private-soft);color:var(--private)}
+.vflow i{font-style:normal;color:var(--muted);padding:2px 0 2px 22px;line-height:1}
+.comp ul{font-size:.93rem;margin-bottom:8px}
+.note{font-size:.88rem;color:var(--muted);font-style:italic}
+@media (max-width:600px){article.response{padding:24px 18px}header.doc h1{font-size:1.8rem}}
+@media print{
+  body{background:#fff;color:#000}
+  nav.toc,.pending{display:none}
+  article.response{border:none;padding:0;page-break-after:always}
+  h3{page-break-after:avoid}
+  .comp,figure,table{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <h1>Azure Networking and DevOps – Study Notes</h1>
+  <p>Saved responses for revision</p>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#r1">What is Azure Networking?</a></li>
+    <li><a href="#r2">Hub-and-Spoke Networks and Azure IP Addressing</a></li>
+    <li><a href="#r3">What is Azure DevOps?</a></li>
+  </ol>
+</nav>
+
+<!-- ================= RESPONSE 1 ================= -->
+<article class="response" id="r1">
+  <span class="resp-tag">Response 1</span>
+  <h2>What is Azure Networking?</h2>
+
+  <p class="lead">Azure Networking is a collection of Azure services that allows cloud resources to communicate securely with each other, with on-premises systems, and with the internet.</p>
+
+  <p>In simple terms, Azure Networking decides:</p>
+  <ul>
+    <li>Who can communicate with whom?</li>
+    <li>How does data travel between services?</li>
+    <li>Which resources are publicly accessible?</li>
+    <li>Which resources should remain private?</li>
+    <li>How do we secure network communication?</li>
+  </ul>
+  <div class="callout"><p>Think of Azure Networking as the <strong>road and security system</strong> of your cloud infrastructure.</p></div>
+
+  <h3>1. Real-world analogy</h3>
+  <p>Imagine a company campus.</p>
+  <div class="analogy">
+    <div><b>Buildings</b>Azure resources (Databricks, ADLS, SQL Database)</div>
+    <div><b>Roads</b>Network connections</div>
+    <div><b>Security gates</b>Firewalls and network security rules</div>
+    <div><b>Private roads</b>Private networking</div>
+    <div><b>Public roads</b>Internet connectivity</div>
+  </div>
+  <p>Even though all buildings belong to the same company, you control which buildings can communicate with each other.</p>
+
+  <h3>2. Important Azure Networking components</h3>
+  <p>These are the main concepts you should understand as an Azure Data Engineer.</p>
+  <div class="components">
+    <div class="comp">
+      <h4><span class="num">1</span>Virtual Network (VNet)</h4>
+      <p>A private network in Azure where cloud resources can communicate securely.</p>
+      <p class="ex">Example: Place Azure Databricks and Azure SQL resources within a private network architecture.</p>
+    </div>
+    <div class="comp">
+      <h4><span class="num">2</span>Subnet</h4>
+      <p>Divides a VNet into smaller network sections.</p>
+      <p class="ex">Example: Separate application resources and database resources into different subnets.</p>
+    </div>
+    <div class="comp">
+      <h4><span class="num">3</span>Network Security Group (NSG)</h4>
+      <p>Controls incoming and outgoing network traffic using security rules based on IP addresses, ports and protocols.</p>
+      <p class="ex">Example: Allow HTTPS traffic on port 443 while blocking unwanted connections.</p>
+    </div>
+    <div class="comp">
+      <h4><span class="num">4</span>Private Endpoint</h4>
+      <p>Provides a private IP address in your VNet to access supported Azure services privately through Azure Private Link.</p>
+      <p class="ex">Example: Access ADLS Gen2 without exposing its data endpoint publicly.</p>
+    </div>
+    <div class="comp">
+      <h4><span class="num">5</span>VPN Gateway</h4>
+      <p>Establishes encrypted connections between Azure networks and external networks, such as an organization's on-premises network.</p>
+      <p class="ex">Example: Connect a company's office network to Azure.</p>
+    </div>
+    <div class="comp">
+      <h4><span class="num">6</span>Load Balancer</h4>
+      <p>Distributes incoming network traffic across multiple backend resources.</p>
+      <p class="ex">Example: Distribute application traffic across multiple virtual machines.</p>
+    </div>
+  </div>
+
+  <h3>3. How does Azure Networking work? A practical example</h3>
+  <p>Suppose your company has three Azure resources: <strong>Azure Data Factory</strong>, <strong>Azure Databricks</strong>, and <strong>ADLS Gen2</strong>.</p>
+  <p>You want ADF to trigger Databricks, Databricks to process data, and the results to be stored in ADLS.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 330" role="img" aria-labelledby="dgT dgD">
+      <title id="dgT">Example Azure data engineering network architecture</title>
+      <desc id="dgD">Azure Data Factory sends secure API calls to Databricks inside an Azure Virtual Network. Databricks reads from and writes to ADLS Gen2. Network security controls protect the setup.</desc>
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M1 1L9 5L1 9" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <rect class="d-box" x="20" y="90" width="170" height="74" rx="8"/>
+      <text class="d-t" x="105" y="120" text-anchor="middle">Azure Data Factory</text>
+      <text class="d-s" x="105" y="142" text-anchor="middle">Pipeline orchestration</text>
+
+      <rect class="d-vnet" x="270" y="30" width="470" height="194" rx="12"/>
+      <text class="d-v" x="290" y="56">Azure Virtual Network (VNet)</text>
+
+      <rect class="d-box" x="300" y="90" width="170" height="74" rx="8"/>
+      <text class="d-t" x="385" y="120" text-anchor="middle">Databricks</text>
+      <text class="d-s" x="385" y="142" text-anchor="middle">Data processing</text>
+
+      <rect class="d-box" x="550" y="90" width="170" height="74" rx="8"/>
+      <text class="d-t" x="635" y="120" text-anchor="middle">ADLS Gen2</text>
+      <text class="d-s" x="635" y="142" text-anchor="middle">Data storage</text>
+
+      <line class="d-arrow" x1="192" y1="127" x2="296" y2="127" marker-end="url(#ah)"/>
+      <text class="d-s" x="232" y="112" text-anchor="middle">Secure API</text>
+
+      <line class="d-arrow" x1="472" y1="116" x2="546" y2="116" marker-end="url(#ah)"/>
+      <line class="d-arrow" x1="546" y1="140" x2="472" y2="140" marker-end="url(#ah)"/>
+      <text class="d-s" x="510" y="186" text-anchor="middle">Read / write</text>
+
+      <rect class="d-sec" x="20" y="252" width="720" height="58" rx="8"/>
+      <text class="d-t" x="380" y="276" text-anchor="middle">Network security controls</text>
+      <text class="d-s" x="380" y="296" text-anchor="middle">NSG, firewall, private endpoints and access policies</text>
+    </svg>
+    <figcaption>Illustrative private network design; actual connectivity depends on resource configuration.</figcaption>
+  </figure>
+
+  <p>Here is what happens:</p>
+  <ol class="path">
+    <li>ADF initiates the pipeline.</li>
+    <li>ADF communicates with the Databricks workspace/API.</li>
+    <li>Databricks reads raw files from ADLS.</li>
+    <li>Databricks transforms the data.</li>
+    <li>Processed data is written back to ADLS.</li>
+  </ol>
+  <div class="callout warn"><p><strong>Important:</strong> These services do not automatically need to be inside the same VNet. Azure provides different connectivity options, including public endpoints, managed networking and private endpoints.</p></div>
+
+  <h3>4. Public Network vs Private Network</h3>
+  <p>This is a very important interview concept.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th class="pub">Public networking</th><th class="priv">Private networking</th></tr></thead>
+      <tbody>
+        <tr><td>Resource can be accessed through a public endpoint</td><td>Access through private network connectivity</td></tr>
+        <tr><td>Communication can happen over the internet</td><td>Communication can stay on private network paths</td></tr>
+        <tr><td>Public access must be secured</td><td>Network exposure is reduced</td></tr>
+        <tr><td>Example: Public storage endpoint</td><td>Example: ADLS through Private Endpoint</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout"><p>Private networking does not automatically mean unrestricted access. Authentication and authorization are still required.</p></div>
+
+  <h3>5. Important networking terms for interviews</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Term</th><th>Simple meaning</th></tr></thead>
+      <tbody>
+        <tr><td><strong>IP Address</strong></td><td>Identifies a device or network endpoint</td></tr>
+        <tr><td><strong>DNS</strong></td><td>Converts domain names into IP addresses</td></tr>
+        <tr><td><strong>Port</strong></td><td>Identifies a network service, e.g. HTTPS uses 443</td></tr>
+        <tr><td><strong>Firewall</strong></td><td>Controls network traffic</td></tr>
+        <tr><td><strong>NSG</strong></td><td>Applies network traffic filtering rules</td></tr>
+        <tr><td><strong>VNet Peering</strong></td><td>Connects two Azure virtual networks</td></tr>
+        <tr><td><strong>NAT Gateway</strong></td><td>Provides controlled outbound internet connectivity</td></tr>
+        <tr><td><strong>Private Link</strong></td><td>Enables private connectivity to supported Azure services</td></tr>
+        <tr><td><strong>VPN Gateway</strong></td><td>Connects Azure to external networks securely</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>6. What should you learn as an Azure Data Engineer?</h3>
+  <p>Recommended order for learning these concepts:</p>
+  <ol class="path">
+    <li>VNet and Subnet<span>Understand how Azure creates private networks.</span></li>
+    <li>Public vs Private Endpoints<span>Understand how Databricks and ADLS communicate.</span></li>
+    <li>NSG and Firewall<span>Understand how network traffic is controlled.</span></li>
+    <li>Private Endpoint and Private Link<span>Understand how to access Azure Storage and SQL privately.</span></li>
+    <li>DNS and IP Addressing<span>Understand how services locate and communicate with each other.</span></li>
+    <li>Managed Virtual Network in ADF<span>Understand how ADF securely connects to data sources using managed networking and managed private endpoints.</span></li>
+  </ol>
+</article>
+
+<!-- ================= RESPONSE 2 ================= -->
+<article class="response" id="r2">
+  <span class="resp-tag">Response 2</span>
+  <h2>Hub-and-Spoke Networks and Azure IP Addressing</h2>
+
+  <ol class="intro-list">
+    <li><strong>Hub-and-Spoke Network Architecture</strong> – how multiple Azure networks are connected.</li>
+    <li><strong>IP Addressing and Reserved IP Addresses</strong> – how Azure assigns IP addresses inside a subnet.</li>
+  </ol>
+  <p>Let's understand both using a practical example.</p>
+
+  <h3>1. What is the Hub-and-Spoke model?</h3>
+  <p class="lead">The Hub-and-Spoke model is a network architecture in which one central network (<strong>Hub</strong>) connects to multiple independent networks (<strong>Spokes</strong>).</p>
+  <p>Think of it like a company's headquarters connected to different departments.</p>
+  <ul>
+    <li><strong>Hub:</strong> Central network that manages shared connectivity and security.</li>
+    <li><strong>Spokes:</strong> Separate networks containing individual applications, databases, and workloads.</li>
+  </ul>
+
+  <h4 style="margin-top:22px">Real-world Azure example</h4>
+  <p>Imagine your company has three workloads:</p>
+  <ul>
+    <li><strong>Spoke 1</strong> – Application services</li>
+    <li><strong>Spoke 2</strong> – Azure Databricks and Data Engineering</li>
+    <li><strong>Spoke 3</strong> – Azure SQL and databases</li>
+  </ul>
+  <p>Instead of connecting every spoke independently to every other spoke, they connect to a central Hub.</p>
+
+  <figure>
+    <svg viewBox="0 0 760 300" role="img" aria-labelledby="hsT hsD">
+      <title id="hsT">Hub-and-Spoke network model</title>
+      <desc id="hsD">A central Hub VNet with shared services connects to three spoke VNets for applications, data engineering and databases.</desc>
+      <rect class="d-vnet" x="250" y="30" width="260" height="98" rx="10"/>
+      <text class="d-t" x="380" y="62" text-anchor="middle">Hub VNet</text>
+      <text class="d-s" x="380" y="86" text-anchor="middle">Firewall, VPN, ExpressRoute,</text>
+      <text class="d-s" x="380" y="106" text-anchor="middle">Bastion, shared DNS</text>
+      <line class="d-arrow" x1="320" y1="128" x2="110" y2="206"/>
+      <line class="d-arrow" x1="380" y1="128" x2="380" y2="206"/>
+      <line class="d-arrow" x1="440" y1="128" x2="650" y2="206"/>
+      <text class="d-s" x="200" y="158" text-anchor="middle">Peering</text>
+      <text class="d-s" x="420" y="172" text-anchor="middle">Peering</text>
+      <text class="d-s" x="560" y="158" text-anchor="middle">Peering</text>
+      <rect class="d-box" x="20" y="206" width="180" height="70" rx="8"/>
+      <text class="d-t" x="110" y="236" text-anchor="middle">Spoke 1</text>
+      <text class="d-s" x="110" y="258" text-anchor="middle">Application services</text>
+      <rect class="d-box" x="290" y="206" width="180" height="70" rx="8"/>
+      <text class="d-t" x="380" y="236" text-anchor="middle">Spoke 2</text>
+      <text class="d-s" x="380" y="258" text-anchor="middle">Databricks, data eng.</text>
+      <rect class="d-box" x="560" y="206" width="180" height="70" rx="8"/>
+      <text class="d-t" x="650" y="236" text-anchor="middle">Spoke 3</text>
+      <text class="d-s" x="650" y="258" text-anchor="middle">Azure SQL, databases</text>
+    </svg>
+  </figure>
+
+  <p>The Hub can contain shared services such as:</p>
+  <ul>
+    <li>Azure Firewall</li>
+    <li>VPN Gateway</li>
+    <li>ExpressRoute Gateway</li>
+    <li>Azure Bastion</li>
+    <li>Shared DNS services</li>
+  </ul>
+  <div class="callout"><p>The advantage is <strong>centralized network management, security and connectivity</strong>.</p></div>
+
+  <h3>2. How Hub and Spoke networks connect</h3>
+  <p>Suppose we design the following address ranges:</p>
+
+  <figure>
+    <svg viewBox="0 0 760 320" role="img" aria-labelledby="apT apD">
+      <title id="apT">Illustrative hub-and-spoke address plan</title>
+      <desc id="apD">Hub VNet 10.0.0.0/16 is peered with Spoke 1 at 10.1.0.0/16 and Spoke 2 at 10.2.0.0/16. The two spokes are not connected to each other by default.</desc>
+      <rect class="d-vnet" x="250" y="20" width="260" height="112" rx="10"/>
+      <text class="d-t" x="380" y="48" text-anchor="middle">Hub VNet: central network</text>
+      <text class="d-c" x="380" y="72" text-anchor="middle">10.0.0.0/16</text>
+      <text class="d-s" x="380" y="96" text-anchor="middle">Azure Firewall, VPN Gateway,</text>
+      <text class="d-s" x="380" y="116" text-anchor="middle">Bastion, Shared DNS</text>
+      <line class="d-arrow" x1="310" y1="132" x2="160" y2="202"/>
+      <line class="d-arrow" x1="450" y1="132" x2="600" y2="202"/>
+      <text class="d-s" x="205" y="160" text-anchor="middle">VNet Peering</text>
+      <text class="d-s" x="555" y="160" text-anchor="middle">VNet Peering</text>
+      <rect class="d-box" x="40" y="202" width="240" height="98" rx="8"/>
+      <text class="d-t" x="160" y="230" text-anchor="middle">Spoke 1: Application VNet</text>
+      <text class="d-c" x="160" y="254" text-anchor="middle">10.1.0.0/16</text>
+      <text class="d-s" x="160" y="278" text-anchor="middle">App services, virtual machines</text>
+      <rect class="d-box" x="480" y="202" width="240" height="98" rx="8"/>
+      <text class="d-t" x="600" y="230" text-anchor="middle">Spoke 2: Data VNet</text>
+      <text class="d-c" x="600" y="254" text-anchor="middle">10.2.0.0/16</text>
+      <text class="d-s" x="600" y="278" text-anchor="middle">Databricks, data workloads</text>
+      <line class="d-no" x1="286" y1="262" x2="474" y2="262"/>
+      <text class="d-s" x="380" y="250" text-anchor="middle">No direct path by default</text>
+    </svg>
+    <figcaption>Illustrative address plan. Each spoke is connected to the Hub using VNet Peering. Address ranges must not overlap.</figcaption>
+  </figure>
+
+  <p>The Hub and Spoke VNets communicate using <strong>VNet Peering</strong>.</p>
+  <div class="callout warn"><p><strong>One important point: VNet Peering is non-transitive.</strong> Just because Spoke 1 and Spoke 2 are both connected to the Hub does not automatically mean they can communicate with each other. You need additional routing or direct peering, depending on the architecture.</p></div>
+
+  <h3>3. Understanding IP addresses in Azure</h3>
+  <p>Now let's correct your IP address example. You mentioned:</p>
+  <ul>
+    <li>10.1.1.0 – Network address</li>
+    <li>10.1.1.2 – Gateway</li>
+    <li>10.1.1.3 – Azure reserved</li>
+  </ul>
+  <p>You're partially correct, but the gateway IP is different.</p>
+  <p>Assume your subnet is <strong>10.1.1.0/24</strong>. This gives us <strong>256 total IP addresses</strong>, from 10.1.1.0 to 10.1.1.255.</p>
+
+  <h4 style="margin-top:22px">Azure reserves 5 IP addresses in every IPv4 subnet</h4>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>IP address</th><th>Status</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr class="res"><td><strong>10.1.1.0</strong></td><td>Reserved 1</td><td>Network address</td></tr>
+        <tr class="res"><td><strong>10.1.1.1</strong></td><td>Reserved 2</td><td>Default gateway</td></tr>
+        <tr class="res"><td><strong>10.1.1.2</strong></td><td>Reserved 3</td><td>Azure DNS mapping</td></tr>
+        <tr class="res"><td><strong>10.1.1.3</strong></td><td>Reserved 4</td><td>Reserved for future use</td></tr>
+        <tr class="use"><td><strong>10.1.1.4</strong></td><td>First usable</td><td>Available for resource assignment</td></tr>
+        <tr class="use"><td><strong>10.1.1.5 – 10.1.1.254</strong></td><td>Usable range</td><td>Available for resource assignment</td></tr>
+        <tr class="res"><td><strong>10.1.1.255</strong></td><td>Reserved 5</td><td>Broadcast address</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">Based on Azure's standard IPv4 subnet reservation rules. The Azure DNS mapping is not necessarily a physical DNS server at that IP.</p>
+
+  <div class="correction"><p><strong>Correction:</strong> The default gateway is <strong>10.1.1.1</strong>, not 10.1.1.2.</p></div>
+  <p class="note">Reference: Microsoft documentation on Azure Virtual Network and subnet design.</p>
+
+  <h3>4. How many IP addresses are usable?</h3>
+  <p>For a /24 subnet:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Calculation</th><th>Addresses</th></tr></thead>
+      <tbody>
+        <tr><td>Total addresses</td><td>256</td></tr>
+        <tr><td>Azure-reserved addresses</td><td>5</td></tr>
+        <tr><td><strong>Usable addresses</strong></td><td><strong>251</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Formula:</p>
+  <div class="formula">Usable IPs = 2<sup>(32 − prefix)</sup> − 5</div>
+  <p>For /24:</p>
+  <div class="formula">2<sup>8</sup> − 5 = 251</div>
+
+  <h3>5. Important: What is GatewaySubnet?</h3>
+  <p>Don't confuse these two things:</p>
+  <div class="versus">
+    <div><strong>10.1.1.1</strong><br>Azure's reserved default gateway IP.</div>
+    <div><strong>GatewaySubnet</strong><br>A specially named subnet where you deploy an Azure VPN Gateway or ExpressRoute Gateway.</div>
+  </div>
+  <p>For example:</p>
+<pre class="tree">Hub-VNet: 10.0.0.0/16
+│
+├── AzureFirewallSubnet
+│   └── 10.0.1.0/26
+│
+├── GatewaySubnet
+│   └── 10.0.2.0/26
+│
+└── AzureBastionSubnet
+    └── 10.0.3.0/26</pre>
+  <p class="note">These are illustrative subnet allocations. The gateway resource receives IP configuration from the GatewaySubnet; it does not simply use 10.0.2.2 as a universal gateway address.</p>
+</article>
+
+<!-- ================= RESPONSE 3 ================= -->
+<article class="response" id="r3">
+  <span class="resp-tag">Response 3</span>
+  <h2>What is Azure DevOps?</h2>
+
+  <p class="lead">Azure DevOps is a Microsoft platform that helps software and data engineering teams plan, develop, test, build, and deploy applications and projects.</p>
+  <p>In simple terms, Azure DevOps helps developers manage the complete <strong>software development lifecycle (SDLC)</strong>, from writing code to deploying it into production.</p>
+  <p>Think of it this way:</p>
+  <ul>
+    <li>Developers write code.</li>
+    <li>Azure DevOps manages the code and its versions.</li>
+    <li>Pipelines automate building and testing.</li>
+    <li>Deployment pipelines deliver the application to the required environment.</li>
+  </ul>
+  <div class="callout"><p><strong>Real-world analogy:</strong> Imagine a software development company where multiple developers work on the same project. Azure DevOps acts like a central workspace where they manage tasks, share code, review changes, test applications, and release updates.</p></div>
+
+  <h3>1. Main components of Azure DevOps</h3>
+  <p>Azure DevOps has five major services.</p>
+  <div class="components">
+    <div class="comp">
+      <h4><span class="num">1</span>Azure Boards</h4>
+      <p>Used to plan and track project work.</p>
+      <ul><li>Create tasks and user stories.</li><li>Track bugs.</li><li>Manage sprints.</li><li>Monitor project progress.</li></ul>
+      <p class="ex">Example: Create a task called "Develop customer ingestion notebook".</p>
+    </div>
+    <div class="comp">
+      <h4><span class="num">2</span>Azure Repos</h4>
+      <p>Used to store and manage source code.</p>
+      <ul><li>Git repositories.</li><li>Branching and merging.</li><li>Pull requests.</li><li>Code reviews.</li></ul>
+      <p class="ex">Example: Store your PySpark notebooks in a Git repository.</p>
+    </div>
+    <div class="comp">
+      <h4><span class="num">3</span>Azure Pipelines</h4>
+      <p>Automates building, testing and deploying code.</p>
+      <ul><li>Continuous Integration (CI).</li><li>Continuous Delivery (CD).</li><li>Automated testing.</li><li>Deployment to environments.</li></ul>
+      <p class="ex">Example: Automatically deploy updated Databricks notebooks when code is merged.</p>
+    </div>
+    <div class="comp">
+      <h4><span class="num">4</span>Azure Test Plans</h4>
+      <p>Used to manage software testing.</p>
+      <ul><li>Create test cases.</li><li>Execute manual tests.</li><li>Track test results.</li><li>Manage bugs.</li></ul>
+      <p class="ex">Example: Test whether a data pipeline produces the expected output.</p>
+    </div>
+    <div class="comp">
+      <h4><span class="num">5</span>Azure Artifacts</h4>
+      <p>Used to store and share software packages.</p>
+      <ul><li>Python packages.</li><li>npm packages.</li><li>Maven packages.</li><li>NuGet packages.</li></ul>
+      <p class="ex">Example: Store and share an internally developed Python library.</p>
+    </div>
+  </div>
+
+  <h3>2. How do these components work together?</h3>
+  <p>Imagine you are developing a Retail Data Engineering project.</p>
+  <figure>
+    <svg viewBox="0 0 760 122" role="img" aria-labelledby="dvT dvD">
+      <title id="dvT">How Azure DevOps components work together</title>
+      <desc id="dvD">Azure Boards plans work, Azure Repos stores code, Azure Pipelines builds, tests and deploys, and deployment delivers to development, testing or production.</desc>
+      <defs>
+        <marker id="ah3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M1 1L9 5L1 9" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <rect class="d-box" x="20" y="24" width="160" height="74" rx="8"/>
+      <text class="d-t" x="100" y="54" text-anchor="middle">Azure Boards</text>
+      <text class="d-s" x="100" y="76" text-anchor="middle">Plan, assign work</text>
+      <rect class="d-box" x="206" y="24" width="160" height="74" rx="8"/>
+      <text class="d-t" x="286" y="54" text-anchor="middle">Azure Repos</text>
+      <text class="d-s" x="286" y="76" text-anchor="middle">Notebooks and code</text>
+      <rect class="d-box" x="392" y="24" width="160" height="74" rx="8"/>
+      <text class="d-t" x="472" y="54" text-anchor="middle">Azure Pipelines</text>
+      <text class="d-s" x="472" y="76" text-anchor="middle">Build, test, deploy</text>
+      <rect class="d-vnet" x="578" y="24" width="160" height="74" rx="8"/>
+      <text class="d-t" x="658" y="54" text-anchor="middle">Deployment</text>
+      <text class="d-s" x="658" y="76" text-anchor="middle">Dev, test or prod</text>
+      <line class="d-arrow" x1="182" y1="61" x2="202" y2="61" marker-end="url(#ah3)"/>
+      <line class="d-arrow" x1="368" y1="61" x2="388" y2="61" marker-end="url(#ah3)"/>
+      <line class="d-arrow" x1="554" y1="61" x2="574" y2="61" marker-end="url(#ah3)"/>
+    </svg>
+  </figure>
+  <p>Azure Test Plans and Azure Artifacts support the development process alongside these steps.</p>
+
+  <h3>3. What is CI/CD?</h3>
+  <p>This is one of the most important concepts in Azure DevOps.</p>
+  <div class="versus">
+    <div>
+      <strong>CI = Continuous Integration</strong>
+      <p style="margin:6px 0">Whenever a developer pushes code changes to the repository, an automated process can:</p>
+      <ul><li>Detect the changes.</li><li>Build the application or project.</li><li>Run automated tests.</li><li>Report failures.</li></ul>
+    </div>
+    <div>
+      <strong>CD = Continuous Delivery / Continuous Deployment</strong>
+      <p style="margin:6px 0">After successful integration:</p>
+      <ul><li>Prepare the application for release.</li><li>Deploy it to development or testing environments.</li><li>Deploy to production according to configured approvals and policies.</li></ul>
+    </div>
+  </div>
+  <p>Example:</p>
+  <div class="vflow" role="list" aria-label="CI/CD flow">
+    <span role="listitem">Developer writes code</span><i aria-hidden="true">↓</i>
+    <span role="listitem">Push code to Git</span><i aria-hidden="true">↓</i>
+    <span role="listitem" class="ci">CI Pipeline</span><i aria-hidden="true">↓</i>
+    <span role="listitem" class="ci">Build + Test</span><i aria-hidden="true">↓</i>
+    <span role="listitem" class="cd">CD Pipeline</span><i aria-hidden="true">↓</i>
+    <span role="listitem" class="cd">Deploy to Production</span>
+  </div>
+
+  <h3>4. Azure DevOps vs GitHub</h3>
+  <p>These are commonly compared in interviews.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Azure DevOps</th><th>GitHub</th></tr></thead>
+      <tbody>
+        <tr><td>Azure Repos</td><td>GitHub Repositories</td></tr>
+        <tr><td>Azure Pipelines</td><td>GitHub Actions</td></tr>
+        <tr><td>Azure Boards</td><td>GitHub Issues / Projects</td></tr>
+        <tr><td>Azure Artifacts</td><td>GitHub Packages</td></tr>
+        <tr><td>Azure Test Plans</td><td>Testing integrations and tools</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout"><p>Both platforms support modern development workflows. They can also be integrated rather than treated as mutually exclusive choices.</p></div>
+
+  <h3>5. How is Azure DevOps useful in your Data Engineering project?</h3>
+  <p>Let's use your Edukron Retail Data Engineering project. Your current architecture:</p>
+  <ul>
+    <li><strong>ADLS Gen2</strong> – Raw data storage.</li>
+    <li><strong>Databricks</strong> – Bronze, Silver and Gold transformations.</li>
+    <li><strong>Databricks Workflows</strong> – Notebook orchestration.</li>
+    <li><strong>ADF</strong> – Pipeline triggering and scheduling.</li>
+  </ul>
+  <p>Azure DevOps can add a code-management and deployment layer:</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Project activity</th><th>Azure DevOps service</th></tr></thead>
+      <tbody>
+        <tr><td>Store Databricks notebooks</td><td>Azure Repos</td></tr>
+        <tr><td>Track ETL development tasks</td><td>Azure Boards</td></tr>
+        <tr><td>Validate notebook changes</td><td>Azure Pipelines</td></tr>
+        <tr><td>Deploy notebooks and configuration</td><td>Azure Pipelines</td></tr>
+        <tr><td>Store reusable Python libraries</td><td>Azure Artifacts</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>For example, when you modify your Bronze notebook:</p>
+  <ol class="path">
+    <li>Commit the changes to Azure Repos.</li>
+    <li>Create a Pull Request.</li>
+    <li>Review and approve the changes.</li>
+    <li>Azure Pipelines runs validation.</li>
+    <li>Deploy the updated notebook to the target Databricks workspace.</li>
+  </ol>
+  <div class="callout"><p>This is an example of implementing <strong>CI/CD for a data engineering project</strong>.</p></div>
+</article>
+
+</div>
+</body>
+</html>
